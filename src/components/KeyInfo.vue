@@ -1,6 +1,6 @@
 <template>
   <span
-    :class="{'key':props.active}"
+    :class="{'key':active, 'focus':focus}"
   >
     {{ char }}
   </span>
@@ -12,6 +12,7 @@ const props = defineProps<{
   char: string,
   active: boolean,
   progress: number,
+  focus: boolean
 }>()
 
 // https://www.npmjs.com/package/javascript-color-gradient
@@ -37,7 +38,7 @@ const colors = [
   "#1aff00",
   "#00ff00"
 ]
-const progressColor = computed(() => colors[parseInt(props.progress * 19)])
+const progressColor = computed(() => colors[Math.ceil(props.progress * 19)])
 </script>
 
 <style>
@@ -47,5 +48,8 @@ const progressColor = computed(() => colors[parseInt(props.progress * 19)])
 }
 .active {
   @apply text-stone-100;
+}
+.focus {
+  @apply underline;
 }
 </style>

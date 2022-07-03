@@ -12,7 +12,7 @@
 import { ref } from "vue"
 interface IKeyStatistics {
   key: string
-  active: bool
+  active: boolean
 }
 const props = defineProps<{
   keys: IKeyStatistics[]
