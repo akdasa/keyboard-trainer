@@ -1,20 +1,25 @@
 <template>
-  <div class="flex flex-col h-screen justify-center items-center ">
+  <div class="flex flex-col h-screen justify-center items-center">
     <div class="m-4 chars">
       <KeyInfo
-        v-for="key in db"
-        :key="key.key"
-        :char="key.key"
-        :active="key.active"
-        :progress="key.accuracy"
-        :focus="key.focus"
+        v-for="key in chars"
+        :key="key"
+        :char="key"
+        :active="context.get(key)?.active ?? false"
+        :progress="context.get(key)?.accuracy ?? 0"
+        :focus="context.get(key)?.focus ?? false"
       />
     </div>
 
     <div class="w-2/3 text">
       <span
         v-for="(char, idx) in text"
-        :class="{'correct': pos>idx, 'active':pos===idx, 'error': pos===idx && isError}"
+        :key="idx"
+        :class="{
+          correct: pos > idx,
+          active: pos === idx,
+          error: pos === idx && isError,
+        }"
       >
         {{ char }}
       </span>
@@ -23,56 +28,41 @@
 </template>
 
 <script setup lang="ts">
-// import Carret from "../components/Carret.vue"
-// const carretLeft = ref<number>(0)
-// const carretTop = ref<number>(0)
-// import KeyProgress from "../components/KeyProgress.vue"
-
-import { ref, computed, reactive } from "vue"
+import { ref, reactive } from "vue"
 import KeyInfo from "../components/KeyInfo.vue"
-import { KeyData } from "./statistics"
-import { TextGenerator } from "./text"
+import { TextGenerator, Context } from "./text"
 import { chars } from "./words_en"
 
 const pos = ref<number>(0)
-const level = ref<number>(2)
+const level = ref<number>(12)
 const isError = ref<boolean>(false)
 
-type t = { [key: string]: KeyData }
+const context = reactive(new Context())
+chars.forEach((x) => context.set(x))
+chars
+  .slice(0, level.value)
+  .forEach((x: string) => {
+    const key = context.get(x)
+    if (key) { key.active = true }
+  })
 
-const db = reactive(chars.reduce(function(obj, char: string) {
-    obj[char] = new KeyData(char);
-    return obj;
-}, {} as t)) as t;
-chars.slice(0, level.value).forEach((x:string) => db[x].active = true)
-
-var text = ref<string>("")
+const text = ref<string>("")
 generateText(level.value)
 
 function generateText(level: number) {
-  const context = {
-    allowedChars: chars.slice(0, level),
-    keyData: db
-  }
   const generator = new TextGenerator()
   text.value = generator.generate(context)
 }
 
-
-window.addEventListener("keypress", function(e) {
+window.addEventListener("keypress", function (e) {
   const input = String.fromCharCode(e.keyCode)
   const char = text.value[pos.value] as string
-  const dbKey = db[char]
+  const dbKey = context.get(char)
 
   if (input === char) {
     isError.value = false
     pos.value += 1
     dbKey?.addHit()
-    // var elements = document.getElementsByClassName('active')[0]
-    // const left = elements.getBoundingClientRect().left
-    // const top = elements.getBoundingClientRect().top
-    // carretLeft.value = left
-    // carretTop.value = top
   } else {
     isError.value = true
     if (dbKey && dbKey.active) {
@@ -82,33 +72,30 @@ window.addEventListener("keypress", function(e) {
 
   if (pos.value >= text.value.length) {
     pos.value = 0
-    text.value = ''
+    text.value = ""
 
-    const keysInFocus = Object.values(db).filter((x:KeyData) => x.focus).length;
+    const keysInFocus = context.getActive().filter((x) => x.focus).length > 0
 
     if (!keysInFocus) {
       level.value += 1
-      const nextChar = chars[level.value-1] as string
-      const dbKey2 = db[nextChar] as KeyData
-      dbKey2.active = true
+      const nextChar = chars[level.value - 1] as string
+      const dbKey2 = context.get(nextChar)
+      if (dbKey2) {
+        dbKey2.active = true
+      }
     } else {
       console.log("key in focus")
     }
 
     generateText(level.value)
   }
-
-});
+})
 </script>
 
-<style>
-
-</style>
+<style></style>
 
 <style scoped>
 .active {
   @apply rounded;
 }
-
-
 </style>

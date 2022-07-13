@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from "vue"
+import { computed} from "vue"
 const props = defineProps<{
   char: string,
   active: boolean,
